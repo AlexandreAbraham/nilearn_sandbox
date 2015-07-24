@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="ie ie6 ltie7 ltie8 ltie9 ltie10 no-js"> <![endif]-->
+<!--[if IE 7]>    <html class="ie ie7 ltie8 ltie9 ltie10 no-js"> <![endif]-->
+<!--[if IE 8]>    <html class="ie ie8 ltie9 ltie10 no-js"> <![endif]-->
+<!--[if IE 9]>    <html class="ie ie9 ltie10 no-js"> <![endif]-->
+<!--[if gt IE 9]><!--><html class="no-js"><!--<![endif]-->
+
+<head>
+<!-- path: xnat-templates/navigations/htmlOpen -->
+    <title>ConnectomeDB</title>
+    <!-- HeaderIncludes -->
+    
+
+
+
+
+
+
+
+<!-- path: /xnat-templates/navigations/HeaderIncludes -->
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="cache-control" content="max-age=0" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta http-equiv="expires" content="-1" />
+<meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+
+<script type="text/javascript">
+
+    var serverRoot = "";
+    var scripts_dir = serverRoot+'/scripts';
+    var csrfToken = "";
+    var showReason = false;
+    var requireReason = false;
+
+    // utility for getting URL query string value
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+            results = regex.exec(location.search);
+        return (results == null) ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
+    window.jsdebug = getParameterByName('jsdebug').toLowerCase();
+    window.js      = getParameterByName('js').toLowerCase();
+
+    // convert window.jsdebug to boolean
+    window.jsdebug = (window.jsdebug === 'true' || window.jsdebug === 'debug' || window.js === 'debug');
+
+    var jQuery_script = (function(){
+        var script = (window.jsdebug) ? 'jquery/jquery-1.8.3.js' : 'jquery/jquery-1.8.3.min.js';
+        return '<script type="text/javascript" src="' + serverRoot + '/scripts/' + script + '"><\/script>';
+    })();
+
+    document.write(jQuery_script);
+
+</script>
+<!-- document.write(jQuery_script); -->
+<script type="text/javascript">
+    // use 'jq' instead of '$' for jQuery functions to avoid _possible_ conflicts with Velocity
+    // but $() and jQuery() should still work since we're not using noConflict()
+    var jq = jQuery;
+	jq.ajaxSetup({cache:false});
+</script>
+
+<script LANGUAGE="JavaScript">
+
+    if (typeof XNAT == "undefined" || !XNAT) {
+        /*
+         * XNAT global namespace object, which will not be overwriten if
+         * already defined. Also define some other top level namespaces.
+         */
+        var XNAT = {
+            /*
++             * Parent namespace that templates can use to put their
++             * own namespace
++             */
+            app: {
+                displayNames: {
+                    singular: {
+                        project: "Project",
+                        subject: "Subject",
+                        imageSession: "Session",
+                        mrSession: "MR Session"
+                     },
+                    plural: {
+                        project: "Projects",
+                        subject: "Subjects",
+                        imageSession: "Sessions",
+                        mrSession: "MR Sessions"
+                     }
+                }
+            },
+            images: {
+                grnChk: "/images/checkmarkGreen.gif",
+                redChk: "/images/checkmarkRed.gif"
+            },
+            data: {
+                context: {
+                    projectName: "$turbineUtils.getProjectDisplayID($om, $project, false)",
+                    projectID: "",
+                    project: "",
+                    xsiType: "",
+                                        subjectLabel: "",
+                    subjectID: "",
+                    label: "",
+                    ID: ""
+                },
+                timestamp: jq.now() // timestamp for the page when it loads
+            }
+        };
+    }
+	
+	if (XNAT.data.context.projectName === "") {
+                        XNAT.data.context.projectName = "";
+    }
+
+    // 'page' object is same as 'context' - easier to remember?
+    XNAT.data.page = XNAT.data.context;
+
+    XNAT.app.showLeftBar = true;
+    XNAT.app.showLeftBarProjects = true;
+    XNAT.app.showLeftBarFavorites = true;
+    XNAT.app.showLeftBarSearch = true;
+    XNAT.app.showLeftBarBrowse = true;
+
+    window.available_elements = new Array();
+
+    
+    
+    window.available_elements.getByName = function (name) {
+        for (var aeC = 0; aeC < this.length; aeC++) {
+            if (this[aeC].element_name == name) {
+                return this[aeC];
+            }
+      }
+    };
+
+        
+
+// quickly reference today's date
+XNAT.data.todaysDate = {};
+// if today was January 23, 2013...
+// m (1), mm (01), d (23), dd (23), yyyy (2013), ISO/iso (2013-01-23), US/us (01/23/2013)
+(function(dateObj) {
+    dateObj.date = new Date();
+    dateObj.gotMonth = dateObj.date.getMonth();
+    dateObj.m = (dateObj.gotMonth + 1).toString() ;
+    dateObj.mm = (dateObj.m.length === 1) ? '0'+ dateObj.m : dateObj.m;
+    dateObj.d = dateObj.date.getDate().toString();
+    dateObj.dd = (dateObj.d.length === 1) ? '0'+ dateObj.d : dateObj.d;
+    dateObj.yyyy = dateObj.date.getFullYear().toString();
+    dateObj.ISO = dateObj.iso = dateObj.yyyy + '-' + dateObj.mm + '-' + dateObj.dd;
+    dateObj.US = dateObj.us = dateObj.mm + '/' + dateObj.dd + '/' + dateObj.yyyy;
+})(XNAT.data.todaysDate);
+
+</script>
+<script type="text/javascript" src="/scripts/xdat.js"></script>
+<script type="text/javascript" src="/scripts/DynamicJSLoad.js"></script>
+<!-- YAHOO USER INTERFACE files below here -->
+<script type="text/javascript" src="/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/event/event-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/container/container-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/menu/menu-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/element/element-beta-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/button/button-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/connection/connection-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/treeview/treeview-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/cookie/cookie-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/tabview/tabview.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/datasource/datasource-min.js"></script> 
+<script type="text/javascript" src="/scripts/yui/build/resize/resize-min.js"></script>   
+<script type="text/javascript" src="/scripts/yui/build/dragdrop/dragdrop-min.js"></script>
+<script type="text/javascript" src="/scripts/yui/build/datatable/datatable-min.js"></script>  
+<script type="text/javascript" src="/scripts/yui/build/paginator/paginator-min.js"></script>  
+<script type="text/javascript" src="/scripts/yui/build/json/json-min.js"></script>  
+<script type="text/javascript" src="/scripts/yui/xnat_loader.js"></script>
+<script type="text/javascript" src="/scripts/LeftBarTreeView.js"></script>
+<script type="text/javascript" src="/scripts/justification/justification.js"></script>
+<script type="text/javascript">	
+ var YUIDOM=YAHOO.util.Dom;
+
+	YAHOO.util.Event.onDOMReady( function()
+	{
+		var myforms = document.getElementsByTagName("form");
+		for (var i=0; i<myforms.length; i++) {
+			var form = myforms[i];
+			var el = document.createElement("input");
+			el.type = "hidden";
+			el.name = "XNAT_CSRF";
+			el.value = "";
+			form.appendChild(el);
+		}
+	});
+</script>
+
+
+<!-- xdat.css and xnat.css loaded last to override YUI styles -->
+<link type="text/css" rel="stylesheet" href="/style/xdat.css">
+<link type="text/css" rel="stylesheet" href="/style/xnat.css">
+
+<link type="text/css" rel="stylesheet" href="/style/style.css">
+
+
+<link rel="stylesheet" type="text/css" href="/scripts/xmodal-v1/xmodal.css">
+<script type="text/javascript" src="/scripts/xmodal-v1/xmodal.js"></script>
+<script type="text/javascript" src="/scripts/xmodal-v1/xmodal-migrate.js"></script>
+
+<link type="text/css" rel="stylesheet" href="/scripts/xMenu/xMenu.css">
+<script type="text/javascript" src="/scripts/xMenu/xMenu.js"></script>
+
+<link type="text/css" rel="stylesheet" href="/scripts/tabWrangler/tabWrangler.css">
+<script type="text/javascript" src="/scripts/tabWrangler/tabWrangler.js"></script>
+
+
+<!--[if lt IE 9]>
+  <style type="text/css">
+    /* rounded corners for IE8 - just ad "rounded" class to element */
+    .ie .rounded { position: relative ; behavior: url('/style/PIE/PIE.htc') ; }
+  </style>
+<![endif]-->
+
+<!-- date input stuff -->
+<link type="text/css" rel="stylesheet" href="/scripts/yui/build/calendar/assets/skins/sam/calendar.css">
+<script type="text/javascript" src="/scripts/yui/build/calendar/calendar-min.js"></script>
+
+<script type="text/javascript" src="/scripts/jquery.maskedinput.min.js"></script>
+<script type="text/javascript" src="/scripts/ezCalendar.js"></script>
+
+
+		
+    <!-- /HeaderIncludes -->
+
+    <script type="text/javascript" src="/scripts/aspera/asperaweb-2.js"></script>
+    
+
+<script type="text/javascript">
+    jq(window).load(function(){
+        jq('#username').focus();
+    });
+</script>
+
+<!-- path: xnat-templates/navigations/bodyOpen -->
+</head>
+<body id="page_body" class="yui-skin-sam">
+<div id="body-container">
+
+
+<!-- path: xnat-templates/layouts/Login -->
+
+	
+
+
+<div id="topbar-container">
+	<div id="topbar">
+    	<div id="leftgroup">
+            <div id="site-logo" class="topbar-item"><a  href="/app/template/Index.vm" onmouseover="return true;"><img src="/images/ConnectomeDB-logo-v2.png" width="250" height="45" /></a></div>
+        </div>
+        <div id="rightgroup">
+        </div>
+        
+    </div>
+</div>
+
+<div id="message-container">
+  <noscript><div class="error"><strong>Access to ConnectomeDB Disabled</strong>. You must have Javascript enabled in your browser to register or log in to ConnectomeDB.</div></noscript>
+</div>
+
+
+      <div id="layout_content2" style="display:none;">Loading...</div>
+      <div id="layout_content" class="main">
+      <div id="tp_fm"></div>
+<!--BEGIN SCREEN CONTENT -->
+      <!-- BEGIN xnat-templates/screens/Login.vm -->
+
+<script type="text/javascript">
+
+window.xmodalDefaults = function(){
+    return {
+        top: '-20%',
+        bottom: '0px'
+    }
+}
+
+jq(function () {
+
+    var messageText = '',
+        className = '';
+
+        
+    if (messageText) {
+        jq("#message-container").append('' +
+            '<div class="' + className + '">' +
+            '<span class="icon icon-sm icon-close"></span>' +
+            messageText +
+            '</div>');
+
+        jq(document.body).on('click', '#message-container div', function () {
+            jq(this).slideUp(200);
+        });
+    }
+
+});
+
+</script>
+
+<script type="text/javascript" src="/scripts/HCP/login.js"></script>
+
+<div id="page-bg"></div> <!-- stores and masks background image for login page -->
+
+<div class="data-banner">
+  <div class="header">
+	<h1 id="page-title">Access HCP Data Releases</h1>
+	<!-- site description vm -->
+			<div class="alert" style="margin-bottom: 2em;"><strong>NOTICE: If you are using Chrome and are having issues with the Aspera download plugin, please navigate to chrome://flags/#enable-npapi and enable use of NPAPI plugins. An anticipated Aspera update should resolve this situation.</strong></div>
+    	        			<div style="white-space: pre-wrap;"><p>ConnectomeDB is a data management platform where users can access, explore and download the latest datasets from the Human Connectome Project. For help on using ConnectomeDB, please consult our <a href="http://humanconnectome.org/connectomeDB/help/" target="_blank">user guide</a>.</p></div>
+            	<!-- end site description -->
+  </div>
+
+  
+  <!--  <div id="user-info"></div> -->
+  <div class="overlay-container">
+
+      <div class="overlay-half">
+          <h3>Log In</h3>
+          <form class="friendlyForm" method="post" action="/j_spring_security_check" accept-charset="UTF-8">
+                                <input type="hidden" id="login_method" name="login_method" value="LDAP" />
+                            <p><label for="username">Username</label> <input type="text" id="username" name="j_username" /></p>
+              <p><label for="j_password">Password</label> <input type="password" id="j_password" name="j_password" autocomplete="off" /></p>
+                        <div class="overlay-action">
+                <span style="margin-left:20px;">
+                    <a id="forgotMyLogin" class="forgotMyLogin">Forgot login?</a>
+                    <a id="resend-email" style="margin-left:20px;margin-right:20px;" href="#">Resend verification email</a>
+                </span>
+                  <script>
+                      document.write('<input type="submit" value="Log In" />');
+                  </script>
+                  <noscript>
+                      <input type="button" disabled="disabled" value="Login Disabled" />
+                  </noscript>
+              </div>
+
+          </form>
+      </div>
+
+      <script type="text/javascript">
+
+          // login / password reminder
+          jq('#forgotMyLogin').on('click', function(){
+
+              // save a reference to the 'forgot' modal here
+              var __forgot;
+
+              var forgot_modal = {
+                  //id: 'forgot_modal', // not sure we need this now
+                  width: 700,
+                  height: 350,
+                  scroll: false,
+                  title: 'ConnectomeDB Username / Password Reminder',
+                  template: jq('#forgot-template'),
+                  classNames: 'forgot',
+                  enter: false,
+                  beforeShow: function(obj){
+                      __forgot = new HCP.login.forgot(obj.__modal);
+                      __forgot.formSetup();
+                  },
+                  buttons: {
+                      request: {
+                          label: 'Request',
+                          close: false,
+                          isDefault: true,
+                          action: function (obj) {
+                              if (__forgot.validate()){
+                                  __forgot.request();
+                              }
+                          }
+                      },
+                      cancel: {
+                          label: 'Cancel',
+                          close: true
+                      }
+                  }
+              };
+
+              xmodal.open(jQuery.extend(true, {}, forgot_modal, window.xmodalDefaults()));
+
+          });
+
+          // re-send verification email
+          jq('#resend-email').on('click', function(e){
+              HCP.login.resendVerification(e);
+          });
+
+      </script>
+
+      <div class="overlay-half right">
+      	<h3>Create an Account</h3>
+        <p>All public releases of data and software tools produced by the Human Connectome Project require a simple sign-on to access. Registering for an account is free and your information will not be shared with any third parties, as per our <a href="http://humanconnectome.org/privacy/" target="_new">privacy policy</a>.</p>
+            <div class="overlay-action">
+                <script>
+                    document.write('<input type="button" class="registerMe" id="registerMe" value="Register" />')
+                </script>
+                <noscript>
+                    <input type="button" disabled="disabled" value="Registration Disabled" />
+                </noscript>
+            </div>
+      </div>
+
+      <script type="text/javascript">
+
+          jq('#registerMe').on('click', function () {
+
+              // save a reference to the 'register' modal here
+              var __register;
+
+              var register_modal = {
+                  //id: 'register-template', // not sure we need this now
+                  width: 700,
+                  height: '70%',
+                  minHeight: 500,
+                  title: 'Register an account with the Human Connectome Project',
+                  template: jq('#register-template'),
+                  enter: false,
+                  beforeShow: function(modal){
+                      __register = new HCP.login.register(modal.__modal);
+                      __register.setupForm();
+                  },
+                  afterShow: function(modal){
+                      modal.__modal.find('input[name="username"]').focus();
+                  },
+                  footerContent: '' +
+                      '<span class="required_text message" style="font-size:13px;">' +
+                      'All fields required for registration.' +
+                      '</span>',
+                  buttons: {
+                      register: {
+                          label: 'Register',
+                          close: false,
+                          isDefault: true,
+                          action: function (obj) {
+
+                              if (!__register.validateForm()){
+                                  return false;
+                              }
+
+                              var __form = obj.__modal.find('form.register');
+                              var email = __form.find('input[name="email"]').val();
+
+                              xmodal.loading.open('Submitting data...');
+
+                              var doRegister = jq.ajax({
+                                  type: 'POST',
+                                  data: __register.__form.serialize(),
+                                  url: serverRoot + '/registerUser'
+                              });
+
+                              doRegister.done(function( data, textStatus, jqXHR ){
+                                  xmodal.loading.close()
+
+                                  var subscribed = __register.subscribeToEmailLists(email);
+
+                                  var msg = '<b style="font-size:15px">Success!</b><br><br>' +
+                                      'You have created an account with the username <b>' +
+                                      ''+ __form.find('input[name="username"]').val() +'</b>. ' +
+                                      'Please check your email at <b>'+ email +' </b> to ' +
+                                      'complete your registration. ';
+
+                                  var msg_alt = '' +
+                                          '<b style="font-size:15px">Success!</b><br><br>' +
+                                          "You've registered with the username: " +
+                                          '<b>' + __form.find('input[name="username"]').val() + '</b> ' +
+                                          'and email address: <b>' + email + '</b>. ' +
+                                          'You will receive a verification email with instructions to ' +
+                                          'complete your registration. ';
+
+                                  if (subscribed) {
+                                      var sub_text = 'You have also been added to the ' + subscribed + ' email list(s).';
+                                      msg += sub_text;
+                                      msg_alt += sub_text;
+                                  }
+
+                                  xmodal.message(HCP.login.formattedMessage(msg),{width:500,height:250,action: function(){xmodal.closeAll()}});
+
+                              });
+
+                              doRegister.fail(function( jqXHR, textStatus, errorThrown ){
+                                  xmodal.loading.close()
+                                  var msg = HCP.login.formattedMessage( jqXHR.responseText );
+                                  xmodal.message(msg);
+                              });
+                              //console.log(__register.__form.serialize());
+                              //var __form = obj.__modal.find('form.register');
+                              // dbRegisterCall(  __form, __form.data('url') );
+                              //__form.submit();
+                          },
+                          classNames: 'register submit'
+                      },
+                      cancel: {
+                          label: 'Cancel',
+                          close: true
+                      }
+                  }
+              };
+
+              xmodal.open(register_modal);
+
+          });
+
+      </script>
+
+  </div>
+
+</div>
+<!-- end banner -->
+
+
+<script type="text/javascript">
+    jq(function () {
+        jq("#username").focus();
+    });
+</script>
+
+
+<!-- MODAL: Registration form. -->
+<div id="register-template" class="html-template existing" style="display:none;">
+    <!-- modal body start -->
+    <div id="reg-div">
+        <form id="regForm"
+            class="friendlyForm register"
+                        action="javascript:"
+            accept-charset="UTF-8">
+
+            <p><strong>Registration</strong></p>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-username">Create a username</label>
+                    <input type="text" id="reg-username" name="username" maxlength="20" class="required validate" />
+                    <div class="helptext hidden">Usernames must be all lower-case.</div>
+                    <div data-for="username" class="helptext-error username-lowercase" style="display:none;">Username has been converted to lowercase.</div>
+                </div>
+                <p data-for="username" class="username-required required error hidden">Username is required.</p>
+                <p data-for="username" class="username-invalid error hidden">Username must start with a letter and contain only letters and numbers.</p>
+                <p data-for="username" class="username-duplicate error hidden">That username already exists.</p>
+            </div>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-pw">Create a password</label>
+                    <input type="password" id="reg-pw" name="pw" maxlength="127" class="required validate" />
+                    <div class="helptext hidden">Passwords must be 5 or more characters.</div>
+                </div>
+                <p data-for="pw" class="password-required required error hidden">Please enter a password of 5 or more characters.</p>
+                <p data-for="pw" class="password-simple error hidden">Password must be 5 or more characters.</p>
+            </div>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-pwc">Confirm your password</label>
+                    <input type="password" data-match="reg-pw" id="reg-pwc" name="pwc" maxlength="127" class="required validate" />
+                    <div class="helptext hidden">Passwords must match.</div>
+                </div>
+                <p data-for="pwc" class="password-mismatch error hidden">Passwords do not match.</p>
+            </div>
+
+            <hr size="1" color="#ccc"/>
+
+            <p style="margin-top:10px;"><strong>Account Information</strong></p>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-firstname">First Name</label>
+                    <input type="text" id="reg-firstname" name="firstname" maxlength="63" class="required validate" />
+                </div>
+                <p data-for="firstname" class="firstname required error hidden">First name is required.</p>
+            </div>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-lastname">Last Name</label>
+                    <input type="text" id="reg-lastname" name="lastname" maxlength="63" class="required validate" />
+                </div>
+                <p data-for="lastname" class="lastname required error hidden">Last name is required.</p>
+            </div>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-email">Email</label>
+                    <input type="text" id="reg-email" name="email" maxlength="127" class="email required validate" />
+                    <div class="helptext hidden">Your email is required to complete registration for this site.</div>
+                </div>
+                <p id="email-required" data-for="email" class="email-required required error hidden">Email address is required.</p>
+                <p id="email-invalid" data-for="email" class="email-invalid error hidden">Invalid email format.</p>
+                <p id="email-duplicate" data-for="email" class="email-duplicate error hidden">That email address is already registered.</p>
+            </div>
+
+            <div class="inputContainer">
+                <div class="inputWrapper">
+                    <label for="reg-institution">Institution</label>
+                    <input type="text" id="reg-institution" name="institution" maxlength="63" class="required" />
+                    <div class="helptext hidden"></div>
+                </div>
+            </div>
+            <!--
+            <div class="inputWrapper department">
+                <label for="department">Department (Leave this blank)</label> <input type="text" name="department" />
+            </div> -->
+            <input type="hidden" name="department" id="reg-department" />
+            <input type="hidden" name="isWBForm" value="N" />
+            <input type="hidden" name="agreeToDataUseTerms" id="agreeToDataUseTerms" />
+            <input type="hidden" name="agreeToWBTerms" id="agreeToWBTerms" />
+
+        </form>
+        <!-- /#regForm -->
+
+        <hr size="1" color="#ccc"/>
+
+        <p><strong>Mailing List Subscriptions (Optional)</strong></p>
+
+        <label style="display:block;">
+            <input data-form="dataUsersListForm" class="email-list" type="checkbox" id="hcp-announce" name="hcp-announce" title="HCP Announcments" checked />
+            Send me announcements of future data releases
+        </label>
+        <input type="hidden" name="email" id="dataUsersListEmail" value="" />
+
+        <label style="display:block;">
+            <input data-form="hcpAnnounceListForm" class="email-list" type="checkbox" id="hcp-users" name="hcp-users" title="HCP Data Users" checked />
+            Subscribe me to the HCP Data Users email forum
+        </label>
+
+    </div>
+    <!-- modal body end -->
+</div>
+
+<form id="dataUsersListForm" action="https://lists.humanconnectome.org/mailman/subscribe/hcp-users" target="oframe1">
+    <input type="hidden" name="email" id="dataUsersListEmail" value="" />
+</form>
+<form id="hcpAnnounceListForm" action="https://lists.humanconnectome.org/mailman/subscribe/hcp-announce" target="oframe2">
+    <input type="hidden" name="email" id="hcpAnnounceListEmail" value="" />
+</form>
+
+<iframe style="display:none" name="oframe1"></iframe>
+<iframe style="display:none" name="oframe2"></iframe>
+
+
+
+<!-- MODAL: Username / Password Reminder -->
+<div id="forgot-template" class="html-template existing" style="display:none;">
+    <!-- modal body start -->
+    <form id="forgotForm"
+        class="forgot friendlyForm"
+        name="forgotForm"
+        accept-charset="UTF-8">
+                <p id="pass-reminder-error" class="error hidden"></p>
+
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 30px;">
+            <tr valign="top">
+                <td style="border-right: 1px solid #e0e0e0; padding-right: 30px;">
+                    <p><strong>Forgot your Username?</strong></p>
+                    <p style="font-size: 12px !important; margin-bottom: 20px;">Your username will be emailed to you.</p>
+                    <div class="inputWrapper">
+                        <label for="forgotUsername">Enter your email</label>
+                        <input id="forgotUsername" type="text" name="email" class="email forgot forgot-username" value="" style="width:225px;" />
+                    </div>
+                </td>
+                <td style="padding-left: 30px;">
+                    <p><strong>Forgot your Password?</strong></p>
+                    <p style="font-size: 12px !important; margin-bottom: 20px;">A new password will be generated and emailed to you.</p>
+                    <div class="inputWrapper">
+                        <label for="forgotPassword">Enter your username</label>
+                        <input id="forgotPassword" type="text" name="username" class="username forgot forgot-password" value="" style="width:225px;" />
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+                                </form>
+    <!-- modal body end -->
+</div>
+
+
+
+<!-- MODAL: Re-send verification email -->
+<div id="resend-email-template" class="html-template" style="display:none;">
+    <div id="resend-email-form">
+        <p style="font-size:13px;line-height:17px;"><label for="requestEmail">Enter your email address to resend the verification email:</label></p>
+        <input id="requestEmail" type="text" name="email" value="" size="30" maxlength="255" style="width:210px">
+        </div>
+</div>
+
+
+
+<!--
+	MODAL: Registration thank you.
+    If we are using an email confirmation, this is triggered by the successful submission of the registration form.
+-->
+<div id="reg-thanks-div" class="modal hidden">
+	<p class="modal-title">Please confirm your registration</p>
+    <div style="margin:250px 100px; text-align: center;">
+        <img src="/images/logo-icon.png" />
+        <p id="reg-thanks-msg" style="font-size:18px; line-height: 24px;"></p>
+	</div>
+    <p class="form-submit"><input type="button" value="Close" onclick="javascript:modalClose();"></p>
+</div>
+<div id="reg-processing-div" class="modal hidden opaque">
+    <div style="margin:225px 100px 117px; text-align: center;">
+    	<img src="/images/loading.gif"/>
+	</div>
+</div>
+
+
+<!--
+	MODAL: Registration confirmation.
+    If we are using an email confirmation, this is triggered by a URL event.
+-->
+<div id="reg-confirm-div" class="modal hidden">
+	<p class="modal-title">Registration confirmation</p>
+    <div style="margin:150px 100px; text-align: center;">
+        <img src="/images/logo-icon.png" />
+        <p id="reg-confirm-msg" style="font-size:18px; line-height: 24px;"></p>
+	</div>
+    <p class="form-submit"><input type="button" value="Close" onclick="javascript:closeConfirmation();"></p>
+</div>
+<!-- end page mask and modal -->
+
+
+
+<!-- END xnat-templates/screens/Login.vm -->
+
+<!--END SCREEN CONTENT -->
+      </div>
+
+</div><!-- /#body-container -->
+<div id="footer-container">
+    <div id="footer">
+        <p><span style="float:right;"><a href="http://humanconnectome.org/connectomeDB/help">ConnectomeDB Tutorial</a> <span style="margin: 0 20px;">|</span> <a href="mailto:support@humanconnectome.org">Contact Support</a></span><strong>ConnectomeDB is a product of the Human Connectome Project</strong></p>
+    </div>
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-29995742-1']);
+      _gaq.push(['_trackPageview']);
+     
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+</div>
+
+
+<!-- path: xnat-templates/navigations/htmlClose -->
+
+<!-- Aspera plugin check --> 
+<div id="aspera_msg_holder" style="display:none;">
+	<div id="aspera_messagebar">
+		<div class="note" style="top:0;left:0">
+			<div class="warning-inset"><img src="/images/attention.png" style="margin: 0 6px -2px 0;">Plugin Required!</div>
+			<div class="message-inset">A browser check indicates that you do not have the Aspera Connect plugin installed. The Human Connectome Project is using an Aspera server to dramatically boost data transfer speeds. <a id="installAsperaPluginLink" href="#" title="Aspera Connect plugin">Please install this plugin</a> before using any of ConnectomeDB's services, including downloading. (<a href="http://humanconnectome.org/documentation/connectomeDB/downloading/installing-aspera.html" title="ConnectomeDB Help: Installing Aspera">Need help with Aspera install</a>?).</div>
+			<div class="close" style="position:absolute; right:0; top:6px; cursor:pointer;"><span class="icon icon-sm icon-close" onclick="hideAsperaPluginMessage();"></span></div>
+		</div>	
+	</div>
+</div>
+	
+<script type="text/javascript" src="/scripts/aspera/connectinstaller-2.js"></script>
+<script type="text/javascript" src="/scripts/aspera/connectversions.js"></script>
+
+<script type="text/javascript">
+  function hideAsperaPluginMessage() { 
+    jq('#aspera_messagebar').slideUp(200); 
+  }
+  jq(document).ready(function(){
+    var currentProtocol;
+    if (window.location.protocol.indexOf('file') != -1){
+      currentProtocol = "http:";
+    }else{
+      currentProtocol = window.location.protocol;
+    }
+    connectInstaller = new AW.ConnectInstaller(currentProtocol+'//d3gcli72yxqn2z.cloudfront.net/connect/');
+    connectInstaller.init({
+    	install: showAsperaPluginWarning,
+    	minVersion: '3.0'
+    });
+	
+      jq("#installAsperaPluginLink").click(function(e) {
+      		e.preventDefault();
+      		installAsperaPlugin();
+    		return false;
+      });
+  });
+  function showAsperaPluginWarning() {
+    jq('#message-container').append(jq('#aspera_msg_holder').html());
+  }
+  function handleInstallError() {
+    alert('The Aspera plugin installation failed.');	// TODO: better
+  }
+  function installAsperaPlugin() {
+    connectInstaller.startEmbeddedInstall({
+      installError : handleInstallError,
+      prompt : true
+    });
+  }
+</script>
+<!-- end Aspera check -->
+
+
+<div id="loading" class="xmask" style="z-index:20001;display:none;">
+        <div class="loading xmodal open fixed" style="display:block;width:260px;height:92px;margin-left:-133px;margin-top:-49px;">
+            <div class="title">
+                <span class="inner">Please wait...</span>
+                <div class="close button"></div>
+            </div>
+            <div class="body content" style="height:67px;">
+                <div class="inner">
+                    <img src="/images/loading_bar.gif" alt="loading">
+                </div>
+            </div>
+        </div>
+    </div><!-- /#loading -->
+<script type="text/javascript" src="/scripts/footer.js"></script>
+</body>
+</html>
+
